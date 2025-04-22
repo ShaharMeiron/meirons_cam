@@ -11,10 +11,10 @@ FRAME_WIDTH = 320
 FRAME_HEIGHT = 240
 
 model = YOLO("yolov8n.pt")
-model.to("cuda")
+# model.to("cuda")
 names = model.names
 
-cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cam = cv2.VideoCapture(0)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)  # Lower resolution for better performance
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 cam.set(cv2.CAP_PROP_FPS, 30)  # Adjust FPS
@@ -61,11 +61,11 @@ def get_direction(box, prev_box):
 
 def draw_data(frame, box, color, direction=""):
     logging.debug(f"object: {names[int(box.cls)]}, Confidence: {box.conf.item()}, Coordinates: {box.xyxy[0]}, direction: {direction}")
-    header = f"conf: {round(100 * int(box.conf.item()))} direction: {direction}"
+    header = f"conf: {round(int(100 * box.conf.item()))}, direction: {direction}, id: {int(box.id)}"
     x1, y1, x2, y2 = box.xyxy[0]
     x1, y1, x2, y2 = round(x1.item()), round(y1.item()), round(x2.item()), round(y2.item())
     cv2.rectangle(frame, (x1, y1), (x2, y2), color)
-    cv2.putText(frame, header, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, color)
+    cv2.putText(frame, header, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color)
     cv2.rectangle(frame, (x1, y1), (x2, y2), color)
 
 
@@ -83,11 +83,12 @@ def choose_box_side(box, left, right):
 def check_direction(box, right_direction, prev_results, frame):
 
     prev_box = get_prev_box(prev_results, box.id)
-    direction = get_direction(box, prev_box)
-    if right_direction == direction:
-        draw_data(frame, box, GREEN, direction)
-    else:
-        draw_data(frame, box, RED, direction)
+    if prev_box:
+        direction = get_direction(box, prev_box)
+        if right_direction == direction:
+            draw_data(frame, box, GREEN, direction)
+        else:
+            draw_data(frame, box, RED, direction)
 
 
 def main():
